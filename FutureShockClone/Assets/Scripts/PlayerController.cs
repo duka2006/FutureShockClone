@@ -13,11 +13,19 @@ public class PlayerController : MonoBehaviour
     private Vector3 moveDir;
     private Vector3 movement;
 
+    [SerializeField] private float attackSpeed = 0.1f;
+
     [SerializeField] private float jumpForce = 3f, gravMod = 2.5f;
 
     float activeMoveSpeed => charCtrl.isGrounded && Input.GetKey(KeyCode.LeftShift) == true ? runSpeed : walkSpeed;
 
     private CharacterController charCtrl;
+
+    private Camera cam;
+
+    [SerializeField] LayerMask groundLayers;
+
+    [SerializeField] GameObject bulletHole;
 
     // Start is called before the first frame update
     void Start()
@@ -25,6 +33,7 @@ public class PlayerController : MonoBehaviour
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
         charCtrl = GetComponent<CharacterController>();
+        cam = Camera.main;
     }
 
     // Update is called once per frame
@@ -32,6 +41,16 @@ public class PlayerController : MonoBehaviour
     {
         MouseControl();
         Movement();
+
+        if (Input.GetMouseButton(0))
+        {
+            attackSpeed -= Time.deltaTime;
+
+            if (attackSpeed <= 0)
+            {
+                Shoot();
+            }
+        }
     }
     void MouseControl()
     {
@@ -67,5 +86,17 @@ public class PlayerController : MonoBehaviour
         movement.y += Physics.gravity.y * Time.deltaTime * gravMod;
 
         charCtrl.Move( movement.normalized * Time.deltaTime * activeMoveSpeed);
+    }
+    void Shoot()
+    {
+        attackSpeed = 0.1f;
+        Ray ray = cam.ViewportPointToRay(new Vector3(.5f, .5f, 0));
+        ray.origin = cam.transform.position;
+
+        if(Physics.Raycast(ray, out RaycastHit hit, groundLayers))
+        {
+            GameObject bulletHoleObj= Instantiate(bulletHole, hit.point + (hit.normal * 0.02f), Quaternion.LookRotation(-hit.normal, Vector3.up));
+            Destroy(bulletHoleObj, 10f);
+        }
     }
 }
